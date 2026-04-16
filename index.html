@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港太空煉金室 Hong Kong Space Alchemy Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --accent: #ff00cc;
+            --bg-dark: #0a0e17;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .card-item {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .card-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .card-item.selected {
+            border-color: var(--primary);
+            background: rgba(0, 210, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .btn-glow {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 20px var(--primary);
+            transform: scale(1.05);
+        }
+
+        .alchemy-circle {
+            width: 160px;
+            height: 160px;
+            border: 4px dashed var(--primary);
+            border-radius: 50%;
+            position: relative;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .mixing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .energy-bar-container {
+            width: 300px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .energy-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .hidden { display: none; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Scrollbar customization */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- 頂部資訊欄 -->
+    <div class="max-w-6xl mx-auto flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+                香港太空煉金室
+            </h1>
+            <p class="text-gray-400 text-sm md:text-base">Hong Kong Space Alchemy Lab</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="showModal('manual-modal')" class="p-2 glass-panel hover:bg-white/20 transition flex items-center gap-2">
+                📖 <span class="hidden md:inline">實驗手冊</span>
+            </button>
+            <button id="toggleAudio" class="p-2 glass-panel hover:bg-white/20 transition">
+                <span id="audioIcon">🔊</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 遊戲主容器 -->
+    <main class="max-w-6xl mx-auto">
+        
+        <!-- 首頁 -->
+        <section id="screen-home" class="flex flex-col items-center justify-center py-10 glass-panel">
+            <div class="alchemy-circle mb-8 flex items-center justify-center">
+                <span class="text-5xl">🚀</span>
+            </div>
+            <h2 class="text-3xl font-bold mb-4 text-center">未來香港太空產業園區</h2>
+            <p class="text-gray-300 mb-8 max-w-md text-center px-4 leading-relaxed">
+                作為一名「太空煉金師」，你將探索如何將衛星、無人機與機械人等高科技，與香港的都市生活結合。
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-2xl px-4">
+                <div class="p-4 bg-blue-900/20 rounded-xl border border-blue-500/30">
+                    <h4 class="font-bold text-blue-400 mb-1">🎯 你的任務</h4>
+                    <p class="text-xs text-gray-400">選擇最契合場景需求的科技組合，創造高價值的太空應用方案。</p>
+                </div>
+                <div class="p-4 bg-purple-900/20 rounded-xl border border-purple-500/30">
+                    <h4 class="font-bold text-purple-400 mb-1">⭐ 評分維度</h4>
+                    <p class="text-xs text-gray-400">系統將從創新度、實用度、環保價值及發展潛力進行多維度評估。</p>
+                </div>
+            </div>
+
+            <button onclick="changeScreen('screen-scene')" class="btn-glow px-12 py-4 bg-blue-600 rounded-full font-bold text-xl shadow-lg shadow-blue-500/50">
+                開始實驗
+            </button>
+        </section>
+
+        <!-- 選擇場景 (第一步) -->
+        <section id="screen-scene" class="hidden">
+            <h2 class="text-2xl font-bold mb-6 text-center">第一步：選擇一個應用場景</h2>
+            <div id="scene-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- 由 JS 填入 -->
+            </div>
+            <div class="flex justify-center">
+                <button onclick="goToTech()" id="next-to-tech" class="px-8 py-3 bg-gray-600 rounded-full font-bold disabled:opacity-50" disabled>
+                    下一步：選擇科技卡
+                </button>
+            </div>
+        </section>
+
+        <!-- 選擇科技卡 (第二步) -->
+        <section id="screen-tech" class="hidden">
+            <!-- 場景提醒區塊 -->
+            <div class="max-w-md mx-auto mb-6 p-4 glass-panel border-blue-500/50 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <span id="selected-scene-icon" class="text-4xl">❓</span>
+                    <div>
+                        <p class="text-xs text-blue-400 font-bold uppercase tracking-widest">當前目標場景</p>
+                        <h3 id="selected-scene-name" class="text-xl font-bold text-white">尚未選擇</h3>
+                    </div>
+                </div>
+                <button onclick="changeScreen('screen-scene')" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full transition">修改場景</button>
+            </div>
+
+            <h2 class="text-2xl font-bold mb-2 text-center">第二步：選擇 2 至 3 張科技卡</h2>
+            <p class="text-center text-gray-400 mb-6" id="tech-count-label">已選擇 0 / 3</p>
+            <div id="tech-grid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <!-- 由 JS 填入 -->
+            </div>
+            <div class="flex justify-center gap-4">
+                <button onclick="changeScreen('screen-scene')" class="px-8 py-3 glass-panel rounded-full">返回</button>
+                <button onclick="startMixing()" id="start-mix-btn" class="px-8 py-3 bg-blue-600 rounded-full font-bold disabled:opacity-50 shadow-lg shadow-blue-500/30" disabled>
+                    開始混合方案
+                </button>
+            </div>
+        </section>
+
+        <!-- 結果展示頁 -->
+        <section id="screen-result" class="hidden max-w-2xl mx-auto">
+            <div id="result-card" class="glass-panel p-8 border-2 border-blue-400 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 text-xs font-mono text-blue-300" id="res-id">#ID-0000</div>
+                
+                <h2 id="res-name" class="text-3xl font-bold text-blue-400 mb-2">方案名稱</h2>
+                <p id="res-tagline" class="text-purple-400 font-bold mb-4">「標語加載中」</p>
+                
+                <div class="bg-black/30 p-4 rounded-lg mb-6">
+                    <p id="res-desc" class="text-gray-200 leading-relaxed italic text-sm">方案簡介將顯示在這裡...</p>
+                </div>
+
+                <div class="mb-2 flex justify-between items-center">
+                    <span class="text-xs text-gray-400 uppercase tracking-widest">多維度評估</span>
+                    <button onclick="showModal('criteria-modal')" class="text-[10px] text-blue-400 underline">評分準則說明</button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6 text-sm">
+                    <div>
+                        <div class="flex justify-between mb-1"><span>創新度</span><span id="score-1" class="font-mono">0</span></div>
+                        <div class="w-full h-1.5 bg-gray-700 rounded-full"><div id="bar-1" class="h-full bg-blue-500 rounded-full transition-all duration-1000" style="width: 0%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><span>實用度</span><span id="score-2" class="font-mono">0</span></div>
+                        <div class="w-full h-1.5 bg-gray-700 rounded-full"><div id="bar-2" class="h-full bg-green-500 rounded-full transition-all duration-1000" style="width: 0%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><span>環保價值</span><span id="score-3" class="font-mono">0</span></div>
+                        <div class="w-full h-1.5 bg-gray-700 rounded-full"><div id="bar-3" class="h-full bg-emerald-500 rounded-full transition-all duration-1000" style="width: 0%"></div></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1"><span>發展潛力</span><span id="score-4" class="font-mono">0</span></div>
+                        <div class="w-full h-1.5 bg-gray-700 rounded-full"><div id="bar-4" class="h-full bg-purple-500 rounded-full transition-all duration-1000" style="width: 0%"></div></div>
+                    </div>
+                </div>
+
+                <div class="text-center border-t border-white/10 pt-6">
+                    <div class="text-gray-400 mb-1">最終實驗總分</div>
+                    <div class="text-6xl font-bold text-white mb-4" id="res-total">0</div>
+                    <p id="res-feedback" class="text-blue-300 font-medium px-6 py-2 bg-blue-900/30 rounded-full inline-block">回饋訊息</p>
+                </div>
+            </div>
+
+            <div class="flex justify-center mt-8 gap-4">
+                <button onclick="resetGame()" class="px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full font-bold text-lg btn-glow shadow-xl">
+                    重新開始實驗
+                </button>
+            </div>
+        </section>
+
+        <!-- 我的最佳配方紀錄 -->
+        <aside id="best-recipe" class="mt-12 p-6 glass-panel border-l-4 border-yellow-500">
+            <h3 class="text-lg font-bold text-yellow-500 mb-2 flex items-center gap-2">
+                🏆 歷史最高分方案
+            </h3>
+            <div id="best-content" class="text-sm">
+                <p class="text-gray-400 italic">尚未進行任何成功的煉金嘗試...</p>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- 彈窗內容 -->
+    <div id="manual-modal" class="modal-overlay">
+        <div class="glass-panel p-8 max-w-xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-blue-400">📖 太空煉金手冊</h3>
+                <button onclick="closeModal('manual-modal')" class="text-2xl">&times;</button>
+            </div>
+            <div class="space-y-4 text-gray-200 text-sm leading-relaxed">
+                <section>
+                    <h4 class="text-lg font-bold text-white mb-2">如何衝擊滿分？</h4>
+                    <p>雖然 2 張卡的正確組合能保證高分，但加入「輔助型」的第 3 張卡是突破 95 分的關鍵：</p>
+                    <ul class="list-disc ml-5 space-y-2 mt-2">
+                        <li><strong class="text-blue-300">強化續航：</strong> 選擇無人機方案時，加入「新材料」。</li>
+                        <li><strong class="text-blue-300">數據鏈結：</strong> 選擇農業或物流方案時，加入「物聯網 IoT」。</li>
+                        <li><strong class="text-blue-300">商業基石：</strong> 在創業基地場景中，加入「太空法律」或「融資」。</li>
+                    </ul>
+                </section>
+                <div class="p-4 bg-blue-900/30 rounded-lg text-xs">
+                    💡 提示：並非卡片越多分數越高，不相關的第 3 張卡可能會稀釋你的專業評價。
+                </div>
+            </div>
+            <button onclick="closeModal('manual-modal')" class="w-full mt-6 py-3 bg-blue-600 rounded-full font-bold">我明白了</button>
+        </div>
+    </div>
+
+    <div id="criteria-modal" class="modal-overlay">
+        <div class="glass-panel p-8 max-w-xl w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-blue-400">📊 評分維度詳解</h3>
+                <button onclick="closeModal('criteria-modal')" class="text-2xl">&times;</button>
+            </div>
+            <div class="grid grid-cols-1 gap-4 text-sm">
+                <div class="p-3 border-b border-white/10 flex items-start gap-3">
+                    <span class="text-xl">💡</span>
+                    <div><h4 class="font-bold">創新度</h4><p class="text-gray-400">技術組合的前瞻性，以及是否打破傳統產業邊界。</p></div>
+                </div>
+                <div class="p-3 border-b border-white/10 flex items-start gap-3">
+                    <span class="text-xl">🛠️</span>
+                    <div><h4 class="font-bold">實用度</h4><p class="text-gray-400">在香港高密度都市環境下的可行性，是否能解決實際痛點。</p></div>
+                </div>
+                <div class="p-3 border-b border-white/10 flex items-start gap-3">
+                    <span class="text-xl">🌿</span>
+                    <div><h4 class="font-bold">環保價值</h4><p class="text-gray-400">對節能減排、減少化學污染或環境預警的貢獻。</p></div>
+                </div>
+                <div class="p-3 flex items-start gap-3">
+                    <span class="text-xl">📈</span>
+                    <div><h4 class="font-bold">發展潛力</h4><p class="text-gray-400">商業模式的可擴展性，以及法律與融資的保障程度。</p></div>
+                </div>
+            </div>
+            <button onclick="closeModal('criteria-modal')" class="w-full mt-6 py-3 bg-blue-600 rounded-full font-bold">關閉</button>
+        </div>
+    </div>
+
+    <!-- 混合動畫層 -->
+    <div id="mixing-overlay" class="mixing-overlay">
+        <div class="alchemy-circle flex items-center justify-center">
+            <span class="text-6xl animate-pulse">🧪</span>
+        </div>
+        <h2 class="text-2xl font-mono mt-8 tracking-widest text-blue-400" id="mixing-status">混合大數據與能量中...</h2>
+        <div class="energy-bar-container">
+            <div class="energy-bar-fill" id="energy-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        /**************************************************************
+         * 資料庫定義
+         **************************************************************/
+        const SCENES = [
+            { id: 's1', name: '智慧物流中心', icon: '📦', desc: '處理全港跨境電商與空運的樞紐' },
+            { id: 's2', name: '都市農場', icon: '🏢', desc: '在摩天大樓中種植的高科技農業' },
+            { id: 's3', name: '智慧工廠', icon: '🏭', desc: '高度自動化的精密零件生產基地' },
+            { id: 's4', name: '醫療中心', icon: '🏥', desc: '利用太空科技進行藥物研發與診斷' },
+            { id: 's5', name: '環境監測站', icon: '🌍', desc: '追蹤氣候變化與自然資源的據點' },
+            { id: 's6', name: '太空創業基地', icon: '🚀', desc: '孕育新一代太空科技企業的孵化器' }
+        ];
+
+        const TECH_CARDS = [
+            { id: 't1', name: '衛星通訊', icon: '📡' },
+            { id: 't2', name: '衛星遙感', icon: '🛰️' },
+            { id: 't3', name: '衛星維修', icon: '🛠️' },
+            { id: 't4', name: '無人機', icon: '🛸' },
+            { id: 't5', name: '感應器', icon: '🌡️' },
+            { id: 't6', name: '物聯網 IoT', icon: '🌐' },
+            { id: 't7', name: '精密製造', icon: '⚙️' },
+            { id: 't8', name: '3D 打印', icon: '🖨️' },
+            { id: 't9', name: '機械人', icon: '🤖' },
+            { id: 't10', name: '新材料', icon: '🧪' },
+            { id: 't11', name: '精準農業', icon: '🌾' },
+            { id: 't12', name: '都市農業', icon: '🥬' },
+            { id: 't13', name: '生態管理', icon: '🌲' },
+            { id: 't14', name: '太空法律', icon: '⚖️' },
+            { id: 't15', name: '企業融資', icon: '💰' }
+        ];
+
+        const RECIPE_RULES = [
+            { ids: ['t2', 't5', 's2'], name: '星際垂直農莊', tagline: '「用衛星之眼照亮每一棵菜」', desc: '結合衛星遙感與地面感應器，精確監控都市摩天大樓內的作物生長狀況。', scores: [95, 92, 98, 94] },
+            { ids: ['t4', 't1', 's1'], name: '低軌衛星物流網', tagline: '「全球覆蓋，物流無界」', desc: '利用低軌衛星通訊指揮無人機群，在複雜城市森林中進行精準遞送。', scores: [93, 97, 86, 95] },
+            { ids: ['t7', 't8', 't10', 's3'], name: '航天精密零件基地', tagline: '「從香港製造到太空應用」', desc: '運用精密製造與 3D 打印技術，配合抗輻射新材料生產高品質衛星零件。', scores: [96, 93, 89, 97] },
+            { ids: ['t9', 't5', 's4'], name: '遠程手術機械醫生', tagline: '「跨越距離的精準醫療」', desc: '結合高感度感應器與機械人技術，實現如太空艙般精密的遠距手術支援。', scores: [91, 95, 82, 96] },
+            { ids: ['t14', 't15', 's6'], name: '太空絲路金融中心', tagline: '「為未來的星際貿易保駕護航」', desc: '建立專為太空初創設計的融資體系與法律保障服務，鞏固香港法律金融地位。', scores: [97, 89, 84, 98] },
+            { ids: ['t2', 't13', 's5'], name: '全球氣候監測之盾', tagline: '「掌握大地的每一絲脈搏」', desc: '利用衛星遙感與生態管理科技，對環境進行 24 小時監測，預警極端天氣。', scores: [94, 91, 99, 92] }
+        ];
+
+        /**************************************************************
+         * 狀態管理
+         **************************************************************/
+        let state = {
+            scene: null,
+            techs: [],
+            best: null,
+            audioEnabled: true
+        };
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        /**************************************************************
+         * 初始化與渲染
+         **************************************************************/
+        window.onload = () => {
+            renderScenes();
+            renderTechs();
+        };
+
+        function renderScenes() {
+            const grid = document.getElementById('scene-grid');
+            grid.innerHTML = SCENES.map(s => `
+                <div class="glass-panel p-6 card-item text-center flex flex-col items-center" onclick="selectScene('${s.id}')" id="card-${s.id}">
+                    <span class="text-4xl mb-3">${s.icon}</span>
+                    <h3 class="font-bold text-lg mb-2">${s.name}</h3>
+                    <p class="text-xs text-gray-400">${s.desc}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderTechs() {
+            const grid = document.getElementById('tech-grid');
+            grid.innerHTML = TECH_CARDS.map(t => `
+                <div class="glass-panel p-4 card-item text-center flex flex-col items-center" onclick="selectTech('${t.id}')" id="card-${t.id}">
+                    <span class="text-2xl mb-2">${t.icon}</span>
+                    <h3 class="text-sm font-bold">${t.name}</h3>
+                </div>
+            `).join('');
+        }
+
+        /**************************************************************
+         * 互動邏輯
+         **************************************************************/
+        function selectScene(id) {
+            playSound(220, 0.1);
+            state.scene = id;
+            document.querySelectorAll('#scene-grid .card-item').forEach(c => c.classList.remove('selected'));
+            document.getElementById(`card-${id}`).classList.add('selected');
+            
+            // 更新第二步的情境提示
+            const sceneData = SCENES.find(s => s.id === id);
+            document.getElementById('selected-scene-icon').innerText = sceneData.icon;
+            document.getElementById('selected-scene-name').innerText = sceneData.name;
+
+            const btn = document.getElementById('next-to-tech');
+            btn.disabled = false;
+            btn.classList.replace('bg-gray-600', 'bg-blue-600');
+        }
+
+        function selectTech(id) {
+            const idx = state.techs.indexOf(id);
+            if (idx > -1) {
+                state.techs.splice(idx, 1);
+                document.getElementById(`card-${id}`).classList.remove('selected');
+                playSound(180, 0.1);
+            } else {
+                if (state.techs.length < 3) {
+                    state.techs.push(id);
+                    document.getElementById(`card-${id}`).classList.add('selected');
+                    playSound(330, 0.1);
+                }
+            }
+            updateTechUI();
+        }
+
+        function updateTechUI() {
+            const count = state.techs.length;
+            document.getElementById('tech-count-label').innerText = `已選擇 ${count} / 3`;
+            const btn = document.getElementById('start-mix-btn');
+            btn.disabled = count < 2;
+        }
+
+        function goToTech() {
+            playSound(440, 0.1);
+            changeScreen('screen-tech');
+        }
+
+        function startMixing() {
+            playSound(523, 0.1);
+            const overlay = document.getElementById('mixing-overlay');
+            overlay.style.display = 'flex';
+            
+            let progress = 0;
+            const bar = document.getElementById('energy-bar');
+            const status = document.getElementById('mixing-status');
+            const statuses = ["注入能量...", "掃描科技組合...", "分析香港場景需求...", "生成太空方案..."];
+            
+            const interval = setInterval(() => {
+                progress += 2;
+                bar.style.width = progress + '%';
+                status.innerText = statuses[Math.floor(progress / 26)] || "完成！";
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    generateResult();
+                    overlay.style.display = 'none';
+                    changeScreen('screen-result');
+                    playSound(880, 0.3);
+                }
+            }, 40);
+        }
+
+        /**************************************************************
+         * 評分演算法
+         **************************************************************/
+        function generateResult() {
+            const combination = [...state.techs, state.scene];
+            let result = RECIPE_RULES.find(rule => rule.ids.every(id => combination.includes(id)));
+
+            if (!result) {
+                result = generateDynamicResult(state.scene, state.techs);
+            } else {
+                // 基礎分數 + 隨機波動
+                result = { ...result, scores: result.scores.map(s => Math.min(100, s + (Math.floor(Math.random() * 5) - 2))) };
+            }
+
+            displayResult(result);
+            saveIfBest(result);
+        }
+
+        function generateDynamicResult(sceneId, techIds) {
+            const scene = SCENES.find(s => s.id === sceneId);
+            const techs = techIds.map(tid => TECH_CARDS.find(t => t.id === tid));
+            
+            const name = `太空${techs[0].name.replace('衛星','')}實驗方案`;
+            const tagline = `「探索${scene.name}的新邊界」`;
+            const desc = `這是一個結合了${techs.map(t => t.name).join('與')}的探索性方案。雖然不在標準手冊中，但展現了獨特的跨界思維。`;
+            
+            let bonus = 0;
+            // 第 3 張卡的邏輯加權
+            if (techIds.length === 3) {
+                bonus = 5; // 勤奮分
+                const names = techs.map(t => t.name).join('');
+                if (names.includes('衛星') && names.includes('感應')) bonus += 5;
+                if (names.includes('製造') && names.includes('材料')) bonus += 5;
+                if (names.includes('通訊') && names.includes('IoT')) bonus += 5;
+            }
+
+            let baseMin = 40 + bonus;
+            let baseMax = 70 + bonus;
+
+            const allNames = techs.map(t => t.name).join('');
+            if (sceneId === 's2' && allNames.includes('農業')) baseMin += 15;
+            if (sceneId === 's3' && allNames.includes('製造')) baseMin += 15;
+            if (sceneId === 's5' && allNames.includes('生態')) baseMin += 15;
+
+            const scores = [
+                Math.min(100, baseMin + Math.floor(Math.random() * (baseMax - baseMin))),
+                Math.min(100, baseMin + Math.floor(Math.random() * (baseMax - baseMin))),
+                Math.min(100, baseMin + Math.floor(Math.random() * (baseMax - baseMin))),
+                Math.min(100, baseMin + Math.floor(Math.random() * (baseMax - baseMin)))
+            ];
+
+            return { name, tagline, desc, scores };
+        }
+
+        function displayResult(res) {
+            document.getElementById('res-id').innerText = `#SK-${Math.floor(Math.random()*9000)+1000}`;
+            document.getElementById('res-name').innerText = res.name;
+            document.getElementById('res-tagline').innerText = res.tagline;
+            document.getElementById('res-desc').innerText = res.desc;
+            
+            const total = Math.round(res.scores.reduce((a, b) => a + b, 0) / 4);
+            document.getElementById('res-total').innerText = total;
+
+            for(let i=1; i<=4; i++) {
+                const s = res.scores[i-1];
+                document.getElementById(`score-${i}`).innerText = s;
+                document.getElementById(`bar-${i}`).style.width = '0%';
+                setTimeout(() => {
+                    document.getElementById(`bar-${i}`).style.width = s + '%';
+                }, 100);
+            }
+
+            let feedback = "";
+            if (total >= 95) feedback = "傳說級方案！你完美結合了技術與場景需求！";
+            else if (total >= 85) feedback = "卓越的方案！這具有很強的商業化潛力！";
+            else if (total >= 70) feedback = "不錯的組合，但仍有進一步優化的空間。";
+            else if (total >= 50) feedback = "這是一個大膽的嘗試，但實用度上可能面臨挑戰。";
+            else feedback = "煉金失敗... 這個組合似乎無法解決當前問題。";
+            
+            document.getElementById('res-feedback').innerText = feedback;
+        }
+
+        function saveIfBest(res) {
+            const total = Math.round(res.scores.reduce((a, b) => a + b, 0) / 4);
+            if (!state.best || total > state.best.total) {
+                state.best = {
+                    name: res.name,
+                    total: total,
+                    scene: SCENES.find(s => s.id === state.scene).name,
+                    techs: state.techs.map(tid => TECH_CARDS.find(t => t.id === tid).name).join(' + ')
+                };
+                updateBestDisplay();
+            }
+        }
+
+        function updateBestDisplay() {
+            const container = document.getElementById('best-content');
+            if (!state.best) return;
+            container.innerHTML = `
+                <div class="flex flex-col gap-1">
+                    <p class="text-lg font-bold text-white">${state.best.name} <span class="text-yellow-500 text-sm">(${state.best.total}分)</span></p>
+                    <p><span class="text-gray-400">應用場景：</span>${state.best.scene}</p>
+                    <p><span class="text-gray-400">科技組合：</span>${state.best.techs}</p>
+                </div>
+            `;
+        }
+
+        /**************************************************************
+         * 通用工具
+         **************************************************************/
+        function changeScreen(screenId) {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function resetGame() {
+            state.scene = null;
+            state.techs = [];
+            document.querySelectorAll('.card-item').forEach(c => c.classList.remove('selected'));
+            document.getElementById('next-to-tech').disabled = true;
+            document.getElementById('next-to-tech').classList.replace('bg-blue-600', 'bg-gray-600');
+            document.getElementById('selected-scene-icon').innerText = "❓";
+            document.getElementById('selected-scene-name').innerText = "尚未選擇";
+            updateTechUI();
+            changeScreen('screen-scene');
+        }
+
+        function playSound(freq, duration) {
+            if (!state.audioEnabled) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        document.getElementById('toggleAudio').onclick = () => {
+            state.audioEnabled = !state.audioEnabled;
+            document.getElementById('audioIcon').innerText = state.audioEnabled ? "🔊" : "🔇";
+        };
+    </script>
+</body>
+</html>
