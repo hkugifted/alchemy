@@ -290,16 +290,14 @@
                     <p>最穩定的黃金太空方案，通常由 <strong>1 個特定場景</strong> 結合 <strong>2 項核心科技</strong> 構成。只要找對這 3 個元素的共鳴點，就能獲得極高的基礎評價。</p>
                 </section>
                 <section>
-                    <h4 class="text-lg font-bold text-white mb-2">第三張卡的雙面刃</h4>
+                    <h4 class="text-lg font-bold text-white mb-2">第三張卡的加成</h4>
                     <p>如果你選擇投入第 3 張科技卡，系統將會嚴格審查它與核心配方的相容性：</p>
                     <ul class="list-disc ml-5 space-y-2 mt-2">
                         <li><strong class="text-green-400">產生共鳴 (+5分)：</strong> 若第三張卡能補足原方案的缺陷（例如：為硬體設備加入連網能力、為實體製造引入合適的原料，或為商業項目提供制度保障），全維度評價將獲額外提升。</li>
-                        <li><strong class="text-red-400">干擾核心 (-5分)：</strong> 若加入的科技與該場景的核心目標毫無關聯，反而會導致資源分散，拉低整體方案的專業評分。</li>
+                        <li><strong class="text-gray-400">未生共鳴 (無加分)：</strong> 若加入的科技雖然具備潛力，但未能與核心方案產生直接的化學反應，將不會獲得額外加分。</li>
                     </ul>
                 </section>
-                <div class="p-4 bg-blue-900/30 rounded-lg text-xs mt-4">
-                    💡 提示：在不確定共鳴關係時，保守提交 2 張科技卡或許是更穩妥的選擇。
-                </div>
+                
             </div>
             <button onclick="closeModal('manual-modal')" class="w-full mt-6 py-3 bg-blue-600 rounded-full font-bold">我明白了</button>
         </div>
@@ -338,7 +336,7 @@
         <div class="alchemy-circle flex items-center justify-center">
             <span class="text-6xl animate-pulse">🧪</span>
         </div>
-        <h2 class="text-2xl font-mono mt-8 tracking-widest text-blue-400" id="mixing-status">混合大數據與能量中...</h2>
+        <h2 class="text-2xl mt-8 tracking-widest text-blue-400 font-bold" id="mixing-status">混合大數據與能量中...</h2>
         <div class="energy-bar-container">
             <div class="energy-bar-fill" id="energy-bar"></div>
         </div>
@@ -508,6 +506,7 @@
             } else {
                 // Golden recipe matched
                 let finalScores = [...resultBase.scores];
+                let finalBonus = 0; // Tracks final +/-5 logic
 
                 // If player put exactly 3 tech cards, judge the 3rd card
                 if (state.techs.length === 3) {
@@ -521,22 +520,20 @@
                     if (['衛星', '感應'].some(k => coreTechNames.includes(k)) && ['衛星', '感應', '物聯網'].some(k => thirdCardName.includes(k))) isSynergic = true;
                     if (['製造', '打印'].some(k => coreTechNames.includes(k)) && thirdCardName.includes('新材料')) isSynergic = true;
                     if (['通訊', '無人機'].some(k => coreTechNames.includes(k)) && thirdCardName.includes('物聯網')) isSynergic = true;
-                    if (resultBase.ids.includes('s6') && ['法律', '融資'].some(k => thirdCardName.includes(k))) isSynergic = true;
+                    if (resultBase.ids.includes('s6') && ['法律', '融資', '通訊', '物聯網'].some(k => thirdCardName.includes(k))) isSynergic = true;
                     if (['生態', '遙感', '感應'].some(k => coreTechNames.includes(k)) && ['農業', '物聯網'].some(k => thirdCardName.includes(k))) isSynergic = true;
                     if (['農業', '遙感'].some(k => coreTechNames.includes(k)) && thirdCardName.includes('感應')) isSynergic = true;
                     if (['衛星'].some(k => coreTechNames.includes(k)) && thirdCardName.includes('維修')) isSynergic = true;
                     if (['機械人'].some(k => coreTechNames.includes(k)) && ['物聯網', '通訊'].some(k => thirdCardName.includes(k))) isSynergic = true;
 
                     if (isSynergic) {
-                        // Synergy: +5 to all
-                        finalScores = finalScores.map(s => Math.min(100, s + 5));
+                        finalBonus = 5;
                     } else {
-                        // Unrelated: -5 to all
-                        finalScores = finalScores.map(s => Math.max(0, s - 5));
+                        finalBonus = 0;
                     }
                 }
 
-                finalResult = { ...resultBase, scores: finalScores };
+                finalResult = { ...resultBase, scores: finalScores, finalBonus: finalBonus };
             }
 
             displayResult(finalResult);
@@ -562,8 +559,6 @@
 
                 if (hasSynergy) {
                     bonus += 5;
-                } else {
-                    bonus -= 5;
                 }
             }
 
@@ -590,8 +585,15 @@
             document.getElementById('res-name').innerText = res.name;
             document.getElementById('res-tagline').innerText = res.tagline;
             document.getElementById('res-desc').innerText = res.desc;
-            
-            const total = Math.round(res.scores.reduce((a, b) => a + b, 0) / 4);
+
+            let total = Math.round(res.scores.reduce((a, b) => a + b, 0) / 4);
+            if (res.finalBonus && res.finalBonus > 0) {
+                total += res.finalBonus;
+                total = Math.min(100, Math.max(0, total));
+
+                document.getElementById('res-desc').innerText += "\n\n[系統判定] 第三張科技卡產生共鳴，最終總分獲得 +5 加成！";
+            }
+
             document.getElementById('res-total').innerText = total;
 
             for(let i=1; i<=4; i++) {
@@ -609,12 +611,17 @@
             else if (total >= 70) feedback = "不錯的組合，但仍有進一步優化的空間。";
             else if (total >= 50) feedback = "這是一個大膽的嘗試，但實用度上可能面臨挑戰。";
             else feedback = "煉金失敗... 這個組合似乎無法解決當前問題。";
-            
+
             document.getElementById('res-feedback').innerText = feedback;
         }
 
         function saveIfBest(res) {
-            const total = Math.round(res.scores.reduce((a, b) => a + b, 0) / 4);
+            let total = Math.round(res.scores.reduce((a, b) => a + b, 0) / 4);
+            if (res.finalBonus !== undefined) {
+                total += res.finalBonus;
+                total = Math.min(100, Math.max(0, total));
+            }
+
             if (!state.best || total > state.best.total) {
                 state.best = {
                     name: res.name,
