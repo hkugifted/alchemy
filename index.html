@@ -645,49 +645,11 @@
             `;
         }
 
-        /**************************************************************
-         * 通用工具
-         **************************************************************/
-        function changeScreen(screenId) {
-            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
-            document.getElementById(screenId).classList.remove('hidden');
-            window.scrollTo(0, 0);
+         catch (e) {}
         }
 
-        function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function resetGame() {
-            state.scene = null;
-            state.techs = [];
-            document.querySelectorAll('.card-item').forEach(c => c.classList.remove('selected'));
-            document.getElementById('next-to-tech').disabled = true;
-            document.getElementById('next-to-tech').classList.replace('bg-blue-600', 'bg-gray-600');
-            document.getElementById('selected-scene-icon').innerText = "❓";
-            document.getElementById('selected-scene-name').innerText = "尚未選擇";
-            updateTechUI();
-            changeScreen('screen-scene');
-        }
-
-        function playSound(freq, duration) {
-            if (!state.audioEnabled) return;
-            try {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
-            } catch (e) {}
-        }
-
-        document.getElementById('toggleAudio').onclick = () => {
-            state.audioEnabled = !state.audioEnabled;
-            document.getElementById('audioIcon').innerText = state.audioEnabled ? "🔊" : "🔇";
+        
+            
         };
     </script>
 </body>
